@@ -1,0 +1,11 @@
+This is a placeholder for a book cover image.
+
+Please replace this file with an actual PNG image named "book_placeholder.png".
+
+For the Library page to work properly, you'll need to add book cover images in the following locations:
+- assets/images/book_covers/beginning_of_infinity.jpg
+- assets/images/book_covers/siddhartha.jpg
+- assets/images/book_covers/antifragile.jpg
+- assets/images/book_covers/sapiens.jpg
+
+Or you can modify the Library.tsx file to use different image paths. 
