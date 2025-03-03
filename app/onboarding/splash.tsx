@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Animated, StatusBar } from 'react-native';
+import { View, StyleSheet, Animated, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 
 const SplashScreen = () => {
@@ -23,17 +23,18 @@ const SplashScreen = () => {
       }),
     ]).start();
 
-    // Navigate to the next screen after a delay
+    // Navigate to step1 after a delay
     const timer = setTimeout(() => {
-      router.replace('/onboarding/index');
-    }, 2500);
+      // Use router.replace for navigation (works on both web and mobile)
+      router.replace('/onboarding/step1');
+    }, 3000); // 3 seconds
 
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar barStyle="light-content" />
       <Animated.Text 
         style={[
           styles.title,
@@ -52,7 +53,7 @@ const SplashScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#FFCC40',
+    backgroundColor: '#FF9500',
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -4,11 +4,15 @@ import { View, StyleSheet, Animated } from 'react-native';
 interface ProgressDotsProps {
   currentStep: number;
   totalSteps: number;
+  activeColor?: string;
+  inactiveColor?: string;
 }
 
 const ProgressDots: React.FC<ProgressDotsProps> = ({ 
   currentStep, 
-  totalSteps 
+  totalSteps,
+  activeColor = '#FFCC40',
+  inactiveColor = '#E0E0E0'
 }) => {
   const renderDots = () => {
     const dots = [];
@@ -19,7 +23,9 @@ const ProgressDots: React.FC<ProgressDotsProps> = ({
           key={i} 
           style={[
             styles.dot,
-            i === currentStep ? styles.activeDot : styles.inactiveDot
+            i === currentStep 
+              ? [styles.activeDot, { backgroundColor: activeColor }] 
+              : [styles.inactiveDot, { backgroundColor: inactiveColor }]
           ]}
         />
       );
@@ -49,13 +55,11 @@ const styles = StyleSheet.create({
     marginHorizontal: 6,
   },
   activeDot: {
-    backgroundColor: '#FFCC40',
     width: 12,
     height: 12,
     borderRadius: 6,
   },
   inactiveDot: {
-    backgroundColor: '#E0E0E0',
   },
 });
 

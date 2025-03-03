@@ -4,9 +4,11 @@ import { useRouter } from 'expo-router';
 import OnboardingLayout from '../../components/Onboarding/OnboardingLayout';
 import OnboardingButton from '../../components/Onboarding/OnboardingButton';
 import PreferenceSelector, { ReadingGoalSelector } from '../../components/Onboarding/PreferenceSelector';
+import { useOnboardingState } from '@/hooks/useOnboardingState';
 
 const PreferencesScreen = () => {
   const router = useRouter();
+  const { completeOnboarding } = useOnboardingState();
   const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
   const [selectedGoal, setSelectedGoal] = useState<number>(10);
 
@@ -25,10 +27,13 @@ const PreferencesScreen = () => {
     }
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
     // In a real app, you would save the user preferences here
     console.log('Selected genres:', selectedGenres);
     console.log('Reading goal:', selectedGoal);
+    
+    // Mark onboarding as completed
+    await completeOnboarding();
     
     // Navigate to the main app
     router.replace('/(tabs)');

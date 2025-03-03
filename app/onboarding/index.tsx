@@ -7,10 +7,12 @@ import ProgressDots from '../../components/Onboarding/ProgressDots';
 import Step1 from './step1';
 import Step2 from './step2';
 import Step3 from './step3';
+import { useOnboardingState } from '@/hooks/useOnboardingState';
 
 const OnboardingIndex = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const router = useRouter();
+  const { completeOnboarding } = useOnboardingState();
   const totalSteps = 3;
 
   const handleNext = () => {
@@ -18,18 +20,35 @@ const OnboardingIndex = () => {
       setCurrentStep(currentStep + 1);
     } else {
       // Navigate to auth screen when all steps are completed
-      router.push('/onboarding/auth');
+      router.push('./auth');
     }
   };
 
-  const handleSkip = () => {
-    // Skip directly to auth
-    router.push('/onboarding/auth');
+  const handleSkip = async () => {
+    // Mark onboarding as completed
+    await completeOnboarding();
+    
+    // Skip directly to homepage
+    router.replace('/(tabs)');
   };
 
   const handleBack = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
+    }
+  };
+
+  // Get background color based on current step
+  const getBackgroundColor = () => {
+    switch (currentStep) {
+      case 1:
+        return '#FF9500'; // Orange for Step 1
+      case 2:
+        return '#FFFFFF'; // Default for other steps
+      case 3:
+        return '#FFFFFF'; // Default for other steps
+      default:
+        return '#FFFFFF';
     }
   };
 
@@ -47,8 +66,13 @@ const OnboardingIndex = () => {
     }
   };
 
+  // Get text color for buttons based on current step
+  const getButtonTextColor = () => {
+    return currentStep === 1 ? '#FFFFFF' : '#333333';
+  };
+
   return (
-    <OnboardingLayout>
+    <OnboardingLayout backgroundColor={getBackgroundColor()}>
       <View style={styles.container}>
         {renderStep()}
         
@@ -56,6 +80,8 @@ const OnboardingIndex = () => {
           <ProgressDots 
             currentStep={currentStep} 
             totalSteps={totalSteps} 
+            activeColor={currentStep === 1 ? '#FFFFFF' : '#FF9500'}
+            inactiveColor={currentStep === 1 ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.1)'}
           />
           
           <View style={styles.buttonContainer}>
@@ -64,6 +90,7 @@ const OnboardingIndex = () => {
                 label="Back" 
                 onPress={handleBack} 
                 variant="secondary"
+                textColor={getButtonTextColor()}
               />
             )}
             
@@ -71,14 +98,17 @@ const OnboardingIndex = () => {
               label={currentStep === totalSteps ? "Get Started" : "Next"} 
               onPress={handleNext} 
               variant="primary"
+              textColor={currentStep === 1 ? '#FF9500' : '#FFFFFF'}
+              backgroundColor={currentStep === 1 ? '#FFFFFF' : '#FF9500'}
             />
           </View>
           
           {currentStep < totalSteps && (
             <OnboardingButton 
-              label="Skip" 
+              label="Skip to Homepage" 
               onPress={handleSkip} 
               variant="text"
+              textColor={getButtonTextColor()}
             />
           )}
         </View>

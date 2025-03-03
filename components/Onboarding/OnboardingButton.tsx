@@ -13,6 +13,8 @@ interface OnboardingButtonProps {
   variant?: 'primary' | 'secondary' | 'text';
   style?: ViewStyle;
   textStyle?: TextStyle;
+  backgroundColor?: string;
+  textColor?: string;
 }
 
 const OnboardingButton: React.FC<OnboardingButtonProps> = ({
@@ -21,12 +23,15 @@ const OnboardingButton: React.FC<OnboardingButtonProps> = ({
   variant = 'primary',
   style,
   textStyle,
+  backgroundColor,
+  textColor,
 }) => {
   const buttonStyles = [
     styles.button,
     variant === 'primary' && styles.primaryButton,
     variant === 'secondary' && styles.secondaryButton,
     variant === 'text' && styles.textButton,
+    backgroundColor && { backgroundColor },
     style,
   ];
 
@@ -35,6 +40,7 @@ const OnboardingButton: React.FC<OnboardingButtonProps> = ({
     variant === 'primary' && styles.primaryText,
     variant === 'secondary' && styles.secondaryText,
     variant === 'text' && styles.textOnlyText,
+    textColor && { color: textColor },
     textStyle,
   ];
 
