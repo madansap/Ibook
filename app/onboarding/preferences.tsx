@@ -1,109 +1,252 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  SafeAreaView, 
+  TouchableOpacity, 
+  Switch,
+  Pressable
+} from 'react-native';
 import { useRouter } from 'expo-router';
-import OnboardingLayout from '../../components/Onboarding/OnboardingLayout';
-import OnboardingButton from '../../components/Onboarding/OnboardingButton';
-import PreferenceSelector, { ReadingGoalSelector } from '../../components/Onboarding/PreferenceSelector';
-import { useOnboardingState } from '@/hooks/useOnboardingState';
+import Slider from '@react-native-community/slider';
 
 const PreferencesScreen = () => {
   const router = useRouter();
-  const { completeOnboarding } = useOnboardingState();
-  const [selectedGenres, setSelectedGenres] = useState<string[]>([]);
-  const [selectedGoal, setSelectedGoal] = useState<number>(10);
+  const [readingHours, setReadingHours] = useState(1.5);
+  const [selectedDays, setSelectedDays] = useState(['S', 'M', 'T', 'W', 'T', 'F', 'S']);
+  const [readingTimes, setReadingTimes] = useState(['8:00 AM']);
+  const [sendReminder, setSendReminder] = useState(true);
 
-  const genres = [
-    'Fiction', 'Non-Fiction', 'Mystery', 'Science Fiction', 
-    'Fantasy', 'Romance', 'Thriller', 'Biography', 
-    'History', 'Self-Help', 'Business', 'Science',
-    'Poetry', 'Classics', 'Young Adult', 'Horror'
-  ];
+  const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
 
-  const handleToggleGenre = (genre: string) => {
-    if (selectedGenres.includes(genre)) {
-      setSelectedGenres(selectedGenres.filter(g => g !== genre));
+  const toggleDay = (day: string) => {
+    if (selectedDays.includes(day)) {
+      setSelectedDays(selectedDays.filter(d => d !== day));
     } else {
-      setSelectedGenres([...selectedGenres, genre]);
+      setSelectedDays([...selectedDays, day]);
     }
   };
 
-  const handleFinish = async () => {
-    // In a real app, you would save the user preferences here
-    console.log('Selected genres:', selectedGenres);
-    console.log('Reading goal:', selectedGoal);
-    
-    // Mark onboarding as completed
-    await completeOnboarding();
-    
-    // Navigate to the main app
-    router.replace('/(tabs)');
+  const addReadingTime = () => {
+    // In a real app, this would open a time picker
+    console.log('Add reading time');
+  };
+
+  const handleContinue = () => {
+    // Save preferences and continue
+    console.log('Preferences saved:', {
+      readingHours,
+      selectedDays,
+      readingTimes,
+      sendReminder
+    });
+    router.push('/(tabs)'); // Navigate to the main app
   };
 
   return (
-    <OnboardingLayout>
-      <ScrollView 
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.scrollContent}
-      >
-        <View style={styles.container}>
-          <Text style={styles.title}>Personalize Your Experience</Text>
-          <Text style={styles.subtitle}>
-            Tell us about your reading preferences so we can tailor recommendations just for you.
-          </Text>
-          
-          <PreferenceSelector
-            title="Select your favorite genres"
-            options={genres}
-            selectedOptions={selectedGenres}
-            onToggleOption={handleToggleGenre}
-            multiSelect={true}
+    <SafeAreaView style={styles.container}>
+      <View style={styles.content}>
+        <Text style={styles.question}>
+          How many hrs a day{'\n'}you will be reading ?
+        </Text>
+        
+        <View style={styles.sliderContainer}>
+          <Slider
+            style={styles.slider}
+            minimumValue={0.5}
+            maximumValue={5}
+            step={0.5}
+            value={readingHours}
+            onValueChange={setReadingHours}
+            minimumTrackTintColor="#FF9500"
+            maximumTrackTintColor="#E5E5E5"
+            thumbTintColor="#FF9500"
           />
-          
-          <ReadingGoalSelector
-            selectedGoal={selectedGoal}
-            onSelectGoal={setSelectedGoal}
-          />
-          
-          <View style={styles.buttonContainer}>
-            <OnboardingButton
-              label="Get Started"
-              onPress={handleFinish}
-              variant="primary"
-              style={styles.button}
-            />
-          </View>
+          <Text style={styles.sliderValue}>{readingHours} hrs</Text>
         </View>
-      </ScrollView>
-    </OnboardingLayout>
+        
+        <View style={styles.sectionContainer}>
+          <Text style={styles.sectionLabel}>Repeat</Text>
+          <Text style={styles.sectionValue}>Daily</Text>
+        </View>
+        
+        <View style={styles.daysContainer}>
+          {days.map((day) => (
+            <TouchableOpacity
+              key={day}
+              style={[
+                styles.dayButton,
+                selectedDays.includes(day) && styles.selectedDayButton
+              ]}
+              onPress={() => toggleDay(day)}
+              activeOpacity={0.8}
+            >
+              <Text style={[
+                styles.dayText,
+                selectedDays.includes(day) && styles.selectedDayText
+              ]}>
+                {day}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        
+        <Text style={styles.sectionLabel}>Reading time</Text>
+        <View style={styles.timeContainer}>
+          <View style={styles.timeSlot}>
+            <Text style={styles.timeText}>8:00 AM</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.addTimeButton}
+            onPress={addReadingTime}
+          >
+            <Text style={styles.addTimeText}>+ Add</Text>
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.reminderContainer}>
+          <Text style={styles.reminderText}>Send Reminder</Text>
+          <Switch
+            value={sendReminder}
+            onValueChange={setSendReminder}
+            trackColor={{ false: '#E5E5E5', true: '#4CD964' }}
+            thumbColor="#FFFFFF"
+          />
+        </View>
+        
+        <TouchableOpacity 
+          style={styles.continueButton}
+          onPress={handleContinue}
+          activeOpacity={0.9}
+        >
+          <Text style={styles.continueButtonText}>Continue</Text>
+        </TouchableOpacity>
+      </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollContent: {
-    flexGrow: 1,
-  },
   container: {
     flex: 1,
-    padding: 16,
+    backgroundColor: '#FFFFFF',
   },
-  title: {
-    fontSize: 28,
+  content: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+  },
+  question: {
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 12,
-    color: '#333333',
+    color: '#000000',
+    marginBottom: 30,
+    lineHeight: 32,
   },
-  subtitle: {
-    fontSize: 16,
+  sliderContainer: {
+    marginBottom: 40,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  sliderValue: {
+    alignSelf: 'flex-end',
+    fontSize: 14,
     color: '#666666',
-    marginBottom: 32,
-    lineHeight: 22,
+    marginTop: 5,
   },
-  buttonContainer: {
-    marginTop: 24,
+  sectionContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  sectionLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000000',
+  },
+  sectionValue: {
+    fontSize: 16,
+    color: '#000000',
+  },
+  daysContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 40,
+  },
+  dayButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#F5F5F5',
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  button: {
-    width: '100%',
+  selectedDayButton: {
+    backgroundColor: '#FF9500',
+  },
+  dayText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666666',
+  },
+  selectedDayText: {
+    color: '#FFFFFF',
+  },
+  timeContainer: {
+    flexDirection: 'row',
+    marginTop: 10,
+    marginBottom: 40,
+  },
+  timeSlot: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    marginRight: 10,
+  },
+  timeText: {
+    fontSize: 16,
+    color: '#000000',
+  },
+  addTimeButton: {
+    backgroundColor: '#F5F5F5',
+    borderRadius: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  addTimeText: {
+    fontSize: 16,
+    color: '#666666',
+  },
+  reminderContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 40,
+  },
+  reminderText: {
+    fontSize: 16,
+    fontWeight: '500',
+    color: '#000000',
+  },
+  continueButton: {
+    backgroundColor: '#000000',
+    borderRadius: 25,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 'auto',
+    marginBottom: 20,
+  },
+  continueButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
   },
 });
 
