@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, SafeAreaView, StatusBar, FlatList, TouchableOpacity, TextInput, Dimensions, Image } from 'react-native';
 import { DotsThree, MagnifyingGlass, Plus, Book } from 'phosphor-react-native';
 import Layout from '@/components/Layout';
+import { useRouter } from 'expo-router';
 
 // Book type definition
 type Book = {
@@ -45,37 +46,41 @@ const numColumns = 2;
 const bookWidth = (width - 48) / numColumns; // 48 = padding (16) * 2 + gap between items (16)
 
 export default function LibraryScreen() {
+  const router = useRouter();
+
   // Book item component
   const renderBookItem = ({ item }: { item: Book }) => (
-    <View style={styles.bookContainer}>
-      <View style={styles.bookCover}>
-        {/* Fallback UI when image is not available */}
-        <View style={styles.coverImageContainer}>
-          {item.coverImage ? (
-            <Image 
-              source={item.coverImage} 
-              style={styles.coverImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.coverPlaceholder}>
-              <Text style={styles.coverTitle} numberOfLines={2}>{item.title}</Text>
-              <Text style={styles.coverAuthor} numberOfLines={1}>{item.author}</Text>
-            </View>
-          )}
+    <TouchableOpacity onPress={() => router.push('/reading/content')}>
+      <View style={styles.bookContainer}>
+        <View style={styles.bookCover}>
+          {/* Fallback UI when image is not available */}
+          <View style={styles.coverImageContainer}>
+            {item.coverImage ? (
+              <Image 
+                source={item.coverImage} 
+                style={styles.coverImage}
+                resizeMode="cover"
+              />
+            ) : (
+              <View style={styles.coverPlaceholder}>
+                <Text style={styles.coverTitle} numberOfLines={2}>{item.title}</Text>
+                <Text style={styles.coverAuthor} numberOfLines={1}>{item.author}</Text>
+              </View>
+            )}
+          </View>
+          
+          {/* Progress indicator */}
+          <View style={styles.progressContainer}>
+            <Text style={styles.progressText}>{item.progress}%</Text>
+          </View>
+          
+          {/* Three dots menu */}
+          <TouchableOpacity style={styles.menuButton}>
+            <DotsThree size={18} color="#333" weight="bold" />
+          </TouchableOpacity>
         </View>
-        
-        {/* Progress indicator */}
-        <View style={styles.progressContainer}>
-          <Text style={styles.progressText}>{item.progress}%</Text>
-        </View>
-        
-        {/* Three dots menu */}
-        <TouchableOpacity style={styles.menuButton}>
-          <DotsThree size={18} color="#333" weight="bold" />
-        </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (

@@ -29,6 +29,18 @@ export default function TabLayout() {
           title: 'Notes',
         }}
       />
+      <Tabs.Screen
+        name="chat"
+        options={{
+          title: 'Chat',
+        }}
+      />
+      <Tabs.Screen
+        name="book-detail"
+        options={{
+          title: 'Book Detail',
+        }}
+      />
     </Tabs>
   );
 } 
