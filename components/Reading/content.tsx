@@ -27,6 +27,7 @@ import { Gear, X, ChatCircleDots, Lightning, Highlighter, BookmarkSimple, Copy }
 import { useRouter } from 'expo-router';
 import ChatSheet from '../Chat/ChatSheet';
 import HighlightedText from './HighlightedText';
+import TextSelectionMenu from './TextSelectionMenu';
 
 // Define the selection change event data interface
 interface SelectionChangeEventData {
@@ -173,21 +174,22 @@ const Content = () => {
           
           // Calculate the approximate position of the selection within the paragraph
           const selectionMidpoint = (selectionStart + selectionEnd) / 2;
-          const selectionPercentage = selectionMidpoint / paragraph.length;
           
           // Calculate the line height (approximate)
           const lineHeight = 24; // This should match your text line height
           
           // Calculate the approximate line number of the selection
-          const approximateLineNumber = Math.floor(selectionPercentage * (paragraph.length / 40)); // Assuming ~40 chars per line
+          const charsPerLine = Math.floor(width / 8); // Approximate chars per line based on width (assuming ~8px per char)
+          const approximateLineNumber = Math.floor(selectionMidpoint / charsPerLine);
           
           // Calculate the y position based on the line number
           const selectionY = pageY + (approximateLineNumber * lineHeight);
           
-          // Position the menu above the selection with increased gap
+          // Just pass the x and y coordinates to the TextSelectionMenu component
+          // which will handle the positioning details
           const menuPosition = {
-            x: pageX + width / 2, // Center horizontally
-            y: selectionY - 80 // Further increased gap for better visibility
+            x: pageX + width / 2, // Center horizontally on the paragraph
+            y: selectionY // Position at the selection
           };
           
           setSelectionMenuPosition(menuPosition);
@@ -224,37 +226,24 @@ const Content = () => {
         clearTimeout(selectionTimeoutRef.current);
       }
       
-      // Show the menu after a short delay to allow user to complete selection
-      selectionTimeoutRef.current = setTimeout(() => {
-        setShowSelectionMenu(true);
-      }, 500);
-      
-      // Prevent the native menu from showing
+      // Platform-specific behavior for showing the menu
       if (Platform.OS === 'ios') {
-        // Hide the native menu
-        hideNativeMenuOnIOS();
-        
-        if (textInputRefs.current[paragraphIndex]) {
-          const textInput = textInputRefs.current[paragraphIndex];
-          if (textInput) {
-            // This trick helps suppress the native menu on iOS
-            textInput.blur();
-            setTimeout(() => {
-              if (textInput) {
-                textInput.focus();
-                // Dismiss keyboard to prevent native menu
-                Keyboard.dismiss();
-              }
-            }, 10);
-          }
-        }
-      } else if (Platform.OS === 'android') {
-        // For Android, we can try to dismiss the keyboard
-        Keyboard.dismiss();
+        // On iOS, we need to wait a bit to let the native selection UI appear
+        // then hide it and show our custom menu
+        selectionTimeoutRef.current = setTimeout(() => {
+          hideNativeMenuOnIOS();
+          setShowSelectionMenu(true);
+        }, 300);
+      } else {
+        // On Android, we can show our menu a bit faster
+        selectionTimeoutRef.current = setTimeout(() => {
+          setShowSelectionMenu(true);
+        }, 200);
       }
-    } else {
-      // Clear text selection state if selection is cleared
-      if (isTextSelected) {
+    } else if (sel && sel.start === sel.end && isTextSelected) {
+      // User tapped somewhere else, clear the selection
+      // But only if our menu isn't showing yet (to prevent accidental dismissal)
+      if (!showSelectionMenu || (event.nativeEvent as any).eventCount > 1) {
         clearSelection();
       }
     }
@@ -296,6 +285,7 @@ const Content = () => {
   const clearSelection = () => {
     setIsTextSelected(false);
     setShowSelectionMenu(false);
+    setSelection(null);
     
     // Clear any pending selection timeout
     if (selectionTimeoutRef.current) {
@@ -303,9 +293,29 @@ const Content = () => {
       selectionTimeoutRef.current = null;
     }
     
-    // Blur any focused TextInput
-    if (selectedParagraphIndex !== null && textInputRefs.current[selectedParagraphIndex]) {
-      textInputRefs.current[selectedParagraphIndex]?.blur();
+    // For all paragraphs, try to clear selection
+    textInputRefs.current.forEach(textInput => {
+      if (textInput) {
+        // Make non-editable again
+        textInput.setNativeProps({ 
+          editable: false,
+          contextMenuHidden: true
+        });
+        
+        textInput.blur();
+        
+        // On iOS, we need to clear the selection programmatically
+        if (Platform.OS === 'ios') {
+          textInput.setNativeProps({
+            selection: { start: 0, end: 0 }
+          });
+        }
+      }
+    });
+    
+    // For Android, we can try to dismiss the keyboard to clear selection
+    if (Platform.OS === 'android') {
+      Keyboard.dismiss();
     }
   };
 
@@ -367,35 +377,30 @@ const Content = () => {
     setIsLongPress(true);
     setSelectedParagraphIndex(paragraphIndex);
     
-    // Hide the native menu on iOS
-    hideNativeMenuOnIOS();
-    
     // Focus the TextInput to show the selection handles
     if (textInputRefs.current[paragraphIndex]) {
       const textInput = textInputRefs.current[paragraphIndex];
       if (textInput) {
-        // Make the TextInput editable temporarily to allow selection
+        // Make the TextInput editable to allow selection
         textInput.setNativeProps({ 
           editable: true,
-          contextMenuHidden: true // Hide the native context menu
+          contextMenuHidden: false // Allow native selection UI to appear
         });
         textInput.focus();
         
-        // Set a timeout to make it non-editable again after selection
-        setTimeout(() => {
-          if (textInput) {
-            textInput.setNativeProps({ 
-              editable: false,
-              contextMenuHidden: true
-            });
-            
-            // For iOS, we can try to dismiss any potential native menu
-            if (Platform.OS === 'ios') {
-              Keyboard.dismiss();
-              hideNativeMenuOnIOS();
+        // Platform-specific behavior
+        if (Platform.OS === 'android') {
+          // On Android, we need to keep the TextInput editable longer
+          // to allow the selection handles to work properly
+          setTimeout(() => {
+            if (textInput) {
+              // Keep editable but hide context menu
+              textInput.setNativeProps({
+                contextMenuHidden: true
+              });
             }
-          }
-        }, 100);
+          }, 500);
+        }
       }
     }
   };
@@ -432,50 +437,15 @@ const Content = () => {
           
           {/* Selection Menu */}
           {isTextSelected && showSelectionMenu && (
-            <View 
-              ref={selectionMenuRef}
-              style={[
-                styles.selectionMenu,
-                {
-                  left: selectionMenuPosition.x - 150, // Center the menu (300px width / 2)
-                  top: selectionMenuPosition.y
-                }
-              ]}
-            >
-              <TouchableOpacity 
-                style={styles.selectionButton} 
-                onPress={handleExplain}
-              >
-                <Lightning size={20} color="#FF9500" weight="fill" />
-                <Text style={[styles.selectionButtonText, styles.selectionButtonTextWithIcon]}>Explain</Text>
-              </TouchableOpacity>
-              
-              <View style={styles.divider} />
-              
-              <TouchableOpacity 
-                style={styles.selectionButton} 
-                onPress={handleHighlight}
-              >
-                <Text style={styles.selectionButtonText}>Highlight</Text>
-              </TouchableOpacity>
-              
-              <View style={styles.divider} />
-              
-              <TouchableOpacity 
-                style={styles.selectionButton} 
-                onPress={handleSave}
-              >
-                <Text style={styles.selectionButtonText}>Save</Text>
-              </TouchableOpacity>
-              
-              <View style={styles.divider} />
-              
-              <TouchableOpacity 
-                style={styles.selectionButton} 
-                onPress={handleCopy}
-              >
-                <Text style={styles.selectionButtonText}>Copy</Text>
-              </TouchableOpacity>
+            <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 900 }}>
+              <TextSelectionMenu
+                position={selectionMenuPosition}
+                onExplain={handleExplain}
+                onHighlight={handleHighlight}
+                onSave={handleSave}
+                onDismiss={clearSelection}
+                selectedText={selection?.text}
+              />
             </View>
           )}
           
@@ -537,7 +507,7 @@ const Content = () => {
                         scrollEnabled={false}
                         editable={false}
                         contextMenuHidden={true}
-                        selectionColor="rgba(255, 149, 0, 0.3)"
+                        selectionColor="#FF9500" // Solid orange color for better visibility
                         onSelectionChange={(e) => handleSelectionChange(e, index)}
                         // Disable the native menu on Android
                         textBreakStrategy="simple"
@@ -551,6 +521,13 @@ const Content = () => {
                           }
                           handleTouchStart(e);
                         }}
+                        // Add these props for better selection experience
+                        selectTextOnFocus={false}
+                        keyboardType="default"
+                        autoCorrect={false}
+                        spellCheck={false}
+                        // Disable auto capitalization
+                        autoCapitalize="none"
                       />
                     )}
                   </View>
@@ -654,44 +631,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 4,
   },
-  selectionMenu: {
+  selectionOverlay: {
     position: 'absolute',
-    flexDirection: 'row',
-    backgroundColor: 'white',
-    borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-    width: 300,
-    justifyContent: 'space-between',
-    zIndex: 20,
-  },
-  selectionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    flex: 1,
-  },
-  selectionButtonText: {
-    fontSize: 15,
-    fontWeight: '500',
-    color: '#333',
-    marginLeft: 0,
-  },
-  selectionButtonTextWithIcon: {
-    marginLeft: 4, // Add margin only for text with icons
-  },
-  divider: {
-    width: 1,
-    backgroundColor: '#E5E5EA',
-    height: 24,
-    alignSelf: 'center',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'transparent',
+    zIndex: 90,
   },
   copySuccessContainer: {
     position: 'absolute',
