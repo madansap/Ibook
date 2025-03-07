@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 
 interface DragHandleProps {
   panHandlers: any;
@@ -19,13 +19,15 @@ const styles = StyleSheet.create({
     height: 20,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: '#F2F2F7',
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
   },
   dragHandle: {
     width: 36,
-    height: 5,
-    borderRadius: 2.5,
+    height: 4,
+    borderRadius: 2,
     backgroundColor: '#C7C7CC',
-    marginTop: 8,
   },
 });
 
