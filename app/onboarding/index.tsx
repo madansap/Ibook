@@ -20,7 +20,7 @@ const OnboardingIndex = () => {
       setCurrentStep(currentStep + 1);
     } else {
       // Navigate to auth screen when all steps are completed
-      router.push('./auth');
+      router.push('/(auth)/sign-up');
     }
   };
 
@@ -28,8 +28,8 @@ const OnboardingIndex = () => {
     // Mark onboarding as completed
     await completeOnboarding();
     
-    // Skip directly to homepage
-    router.replace('/(tabs)');
+    // Skip directly to sign-in
+    router.replace('/(auth)/sign-in');
   };
 
   const handleBack = () => {

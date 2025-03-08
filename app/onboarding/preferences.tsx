@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Slider from '@react-native-community/slider';
+import { markPreferencesCompleted } from '../utils/userFlow';
 
 const PreferencesScreen = () => {
   const router = useRouter();
@@ -33,7 +34,7 @@ const PreferencesScreen = () => {
     console.log('Add reading time');
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     // Save preferences and continue
     console.log('Preferences saved:', {
       readingHours,
@@ -41,7 +42,12 @@ const PreferencesScreen = () => {
       readingTimes,
       sendReminder
     });
-    router.push('/(tabs)'); // Navigate to the main app
+    
+    // Mark preferences as completed
+    await markPreferencesCompleted();
+    
+    // Navigate to the tabs interface
+    router.replace('/(tabs)');
   };
 
   return (

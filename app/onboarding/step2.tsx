@@ -25,7 +25,7 @@ const Step2 = () => {
   };
 
   const handleSkip = () => {
-    router.push('/onboarding/auth');
+    router.push('/onboarding/step3');
   };
 
   // Setup swipe gesture with simplified animation

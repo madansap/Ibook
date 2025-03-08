@@ -10,22 +10,27 @@ import Animated, {
   Easing
 } from 'react-native-reanimated';
 import BottomNavigation from '../../components/Onboarding/BottomNavigation';
+import { markOnboardingCompleted } from '../utils/userFlow';
 
 const { width } = Dimensions.get('window');
 
 const Step3 = () => {
   const router = useRouter();
 
-  const handleNext = () => {
-    router.push('/onboarding/auth');
+  const handleNext = async () => {
+    // Mark onboarding as completed
+    await markOnboardingCompleted();
+    router.push('/(auth)/sign-up');
   };
 
   const handleBack = () => {
     router.push('/onboarding/step2');
   };
 
-  const handleSkip = () => {
-    router.push('/onboarding/auth');
+  const handleSkip = async () => {
+    // Mark onboarding as completed
+    await markOnboardingCompleted();
+    router.push('/(auth)/sign-in');
   };
 
   // Setup swipe gesture with simplified animation
