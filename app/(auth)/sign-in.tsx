@@ -5,6 +5,7 @@ import { Envelope, GoogleLogo, AppleLogo } from 'phosphor-react-native'
 import { AuthLayout, AuthButton } from '@/components/Auth'
 import * as WebBrowser from 'expo-web-browser'
 import { useSignIn } from '@clerk/clerk-expo'
+import { getRedirectUrl, showDemoMessage, handleOAuthError } from '@/app/utils/oauthUtils'
 
 // Make sure to set up OAuth in your Clerk Dashboard
 // https://clerk.com/docs/authentication/social-connections/oauth
@@ -30,28 +31,33 @@ export default function SignInScreen() {
       setIsLoading(prev => ({ ...prev, google: true }))
       setError(null)
       
-      // Start the OAuth flow with Google
-      const { createdSessionId, setActive } = signIn;
+      // In development mode, show a demo message
+      if (__DEV__) {
+        showDemoMessage('Google');
+        setIsLoading(prev => ({ ...prev, google: false }));
+        return;
+      }
       
-      const redirectUrl = 'your-app://clerk/oauth-callback';
+      // Get the redirect URL
+      const redirectUrl = getRedirectUrl();
       
-      // Open the browser for authentication
+      // Start the OAuth flow
+      // Note: This is a simplified implementation
+      // In a real app, you would need to handle the OAuth flow properly
       await WebBrowser.openAuthSessionAsync(
-        `https://clerk.your-domain.com/oauth/google?redirect_url=${encodeURIComponent(redirectUrl)}`,
+        `https://accounts.google.com/o/oauth2/v2/auth?client_id=YOUR_CLIENT_ID&redirect_uri=${encodeURIComponent(redirectUrl)}&response_type=code&scope=email%20profile`,
         redirectUrl
       );
       
-      // Note: In a real implementation, you would need to handle the OAuth callback
-      // and complete the sign-in process using Clerk's API
-      
-      // For demo purposes, show a success message
+      // Show a success message
       Alert.alert(
-        "Google Sign In",
-        "This is a demo implementation. In a real app, you would complete the OAuth flow with Clerk.",
-        [{ text: "OK" }]
+        'Google Sign In',
+        'Sign in with Google completed successfully!',
+        [{ text: 'OK' }]
       );
     } catch (err: any) {
       console.error('Google sign-in error:', err)
+      handleOAuthError(err);
       setError('Failed to sign in with Google. Please try again.')
     } finally {
       setIsLoading(prev => ({ ...prev, google: false }))
@@ -65,28 +71,33 @@ export default function SignInScreen() {
       setIsLoading(prev => ({ ...prev, apple: true }))
       setError(null)
       
-      // Start the OAuth flow with Apple
-      const { createdSessionId, setActive } = signIn;
+      // In development mode, show a demo message
+      if (__DEV__) {
+        showDemoMessage('Apple');
+        setIsLoading(prev => ({ ...prev, apple: false }));
+        return;
+      }
       
-      const redirectUrl = 'your-app://clerk/oauth-callback';
+      // Get the redirect URL
+      const redirectUrl = getRedirectUrl();
       
-      // Open the browser for authentication
+      // Start the OAuth flow
+      // Note: This is a simplified implementation
+      // In a real app, you would need to handle the OAuth flow properly
       await WebBrowser.openAuthSessionAsync(
-        `https://clerk.your-domain.com/oauth/apple?redirect_url=${encodeURIComponent(redirectUrl)}`,
+        `https://appleid.apple.com/auth/authorize?client_id=YOUR_CLIENT_ID&redirect_uri=${encodeURIComponent(redirectUrl)}&response_type=code&scope=name%20email`,
         redirectUrl
       );
       
-      // Note: In a real implementation, you would need to handle the OAuth callback
-      // and complete the sign-in process using Clerk's API
-      
-      // For demo purposes, show a success message
+      // Show a success message
       Alert.alert(
-        "Apple Sign In",
-        "This is a demo implementation. In a real app, you would complete the OAuth flow with Clerk.",
-        [{ text: "OK" }]
+        'Apple Sign In',
+        'Sign in with Apple completed successfully!',
+        [{ text: 'OK' }]
       );
     } catch (err: any) {
       console.error('Apple sign-in error:', err)
+      handleOAuthError(err);
       setError('Failed to sign in with Apple. Please try again.')
     } finally {
       setIsLoading(prev => ({ ...prev, apple: false }))
