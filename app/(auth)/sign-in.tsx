@@ -1,111 +1,159 @@
+import { useRouter } from 'expo-router'
+import { Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native'
+import React, { useState } from 'react'
+import { Envelope, GoogleLogo, AppleLogo } from 'phosphor-react-native'
+import { AuthLayout, AuthButton } from '@/components/Auth'
+import * as WebBrowser from 'expo-web-browser'
 import { useSignIn } from '@clerk/clerk-expo'
-import { Link, useRouter } from 'expo-router'
-import { Text, TextInput, Button, View, StyleSheet } from 'react-native'
-import React from 'react'
+
+// Make sure to set up OAuth in your Clerk Dashboard
+// https://clerk.com/docs/authentication/social-connections/oauth
 
 export default function SignInScreen() {
-  const { signIn, setActive, isLoaded } = useSignIn()
   const router = useRouter()
+  const { signIn, isLoaded } = useSignIn()
+  const [error, setError] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState({
+    email: false,
+    google: false,
+    apple: false
+  })
 
-  const [emailAddress, setEmailAddress] = React.useState('')
-  const [password, setPassword] = React.useState('')
-  const [error, setError] = React.useState<string | null>(null)
+  const handleEmailAuth = () => {
+    router.push('/email-auth' as any)
+  }
 
-  // Handle the submission of the sign-in form
-  const onSignInPress = React.useCallback(async () => {
+  const handleGoogleSignIn = async () => {
     if (!isLoaded) return
-
-    setError(null)
-
-    // Start the sign-in process using the email and password provided
+    
     try {
-      const signInAttempt = await signIn.create({
-        identifier: emailAddress,
-        password,
-      })
-
-      // If sign-in process is complete, set the created session as active
-      // and redirect the user
-      if (signInAttempt.status === 'complete') {
-        await setActive({ session: signInAttempt.createdSessionId })
-        router.replace('/onboarding/preferences')
-      } else {
-        // If the status isn't complete, check why. User might need to
-        // complete further steps.
-        console.error(JSON.stringify(signInAttempt, null, 2))
-        setError('Sign in failed. Please check your credentials and try again.')
-      }
+      setIsLoading(prev => ({ ...prev, google: true }))
+      setError(null)
+      
+      // Start the OAuth flow with Google
+      const { createdSessionId, setActive } = signIn;
+      
+      const redirectUrl = 'your-app://clerk/oauth-callback';
+      
+      // Open the browser for authentication
+      await WebBrowser.openAuthSessionAsync(
+        `https://clerk.your-domain.com/oauth/google?redirect_url=${encodeURIComponent(redirectUrl)}`,
+        redirectUrl
+      );
+      
+      // Note: In a real implementation, you would need to handle the OAuth callback
+      // and complete the sign-in process using Clerk's API
+      
+      // For demo purposes, show a success message
+      Alert.alert(
+        "Google Sign In",
+        "This is a demo implementation. In a real app, you would complete the OAuth flow with Clerk.",
+        [{ text: "OK" }]
+      );
     } catch (err: any) {
-      // See https://clerk.com/docs/custom-flows/error-handling
-      // for more info on error handling
-      console.error(JSON.stringify(err, null, 2))
-      setError(err.errors?.[0]?.message || 'An error occurred during sign in')
+      console.error('Google sign-in error:', err)
+      setError('Failed to sign in with Google. Please try again.')
+    } finally {
+      setIsLoading(prev => ({ ...prev, google: false }))
     }
-  }, [isLoaded, emailAddress, password])
+  }
+
+  const handleAppleSignIn = async () => {
+    if (!isLoaded) return
+    
+    try {
+      setIsLoading(prev => ({ ...prev, apple: true }))
+      setError(null)
+      
+      // Start the OAuth flow with Apple
+      const { createdSessionId, setActive } = signIn;
+      
+      const redirectUrl = 'your-app://clerk/oauth-callback';
+      
+      // Open the browser for authentication
+      await WebBrowser.openAuthSessionAsync(
+        `https://clerk.your-domain.com/oauth/apple?redirect_url=${encodeURIComponent(redirectUrl)}`,
+        redirectUrl
+      );
+      
+      // Note: In a real implementation, you would need to handle the OAuth callback
+      // and complete the sign-in process using Clerk's API
+      
+      // For demo purposes, show a success message
+      Alert.alert(
+        "Apple Sign In",
+        "This is a demo implementation. In a real app, you would complete the OAuth flow with Clerk.",
+        [{ text: "OK" }]
+      );
+    } catch (err: any) {
+      console.error('Apple sign-in error:', err)
+      setError('Failed to sign in with Apple. Please try again.')
+    } finally {
+      setIsLoading(prev => ({ ...prev, apple: false }))
+    }
+  }
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Sign in</Text>
+    <AuthLayout 
+      title="How would you like to continue?"
+    >
       {error && <Text style={styles.error}>{error}</Text>}
-      <TextInput
-        style={styles.input}
-        autoCapitalize="none"
-        value={emailAddress}
-        placeholder="Enter email"
-        onChangeText={(emailAddress) => setEmailAddress(emailAddress)}
-        keyboardType="email-address"
+      
+      <AuthButton
+        title="Continue with Email"
+        onPress={handleEmailAuth}
+        icon={<Envelope size={20} color="#FF9500" weight="bold" />}
+        isLoading={isLoading.email}
       />
-      <TextInput
-        style={styles.input}
-        value={password}
-        placeholder="Enter password"
-        secureTextEntry={true}
-        onChangeText={(password) => setPassword(password)}
+      
+      <AuthButton
+        title="Continue with Google"
+        onPress={handleGoogleSignIn}
+        icon={<GoogleLogo size={20} color="#FFFFFF" weight="bold" />}
+        variant="secondary"
+        isLoading={isLoading.google}
       />
-      <Button title="Sign in" onPress={onSignInPress} />
-      <View style={styles.linkContainer}>
-        <Text>Don't have an account?</Text>
-        <Link href="/sign-up">
+      
+      <AuthButton
+        title="Continue with Apple"
+        onPress={handleAppleSignIn}
+        icon={<AppleLogo size={20} color="#FFFFFF" weight="bold" />}
+        variant="secondary"
+        isLoading={isLoading.apple}
+      />
+      
+      <View style={styles.footer}>
+        <Text style={styles.footerText}>Don't have an account?</Text>
+        <TouchableOpacity onPress={() => router.push('/sign-up' as any)}>
           <Text style={styles.link}>Sign up</Text>
-        </Link>
+        </TouchableOpacity>
       </View>
-    </View>
+    </AuthLayout>
   )
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    padding: 20,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-  input: {
-    height: 50,
-    borderWidth: 1,
-    borderColor: '#ccc',
+  error: {
+    color: '#FFFFFF',
+    backgroundColor: 'rgba(255, 0, 0, 0.2)',
+    padding: 10,
     borderRadius: 8,
     marginBottom: 15,
-    paddingHorizontal: 10,
-  },
-  error: {
-    color: 'red',
-    marginBottom: 10,
     textAlign: 'center',
   },
-  linkContainer: {
+  footer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 20,
-    gap: 5,
+    marginTop: 30,
+    marginBottom: 10,
+  },
+  footerText: {
+    color: '#FFFFFF',
+    marginRight: 5,
   },
   link: {
-    color: 'blue',
+    color: '#FFFFFF',
     fontWeight: 'bold',
+    textDecorationLine: 'underline',
   },
 }) 
