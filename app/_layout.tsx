@@ -8,31 +8,49 @@ import 'react-native-reanimated';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { ClerkProvider, ClerkLoaded } from '@clerk/clerk-expo';
 import { tokenCache } from '@/cache';
-
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { Platform, LogBox } from 'react-native';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
-SplashScreen.preventAutoHideAsync();
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Ignore error
+});
+
+// Ignore specific warnings that might affect Android
+LogBox.ignoreLogs(['Warning: ...']); // you can specify warnings to ignore
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
-  const [loaded] = useFonts({
+  const [loaded, error] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
-  const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!;
-
-  if (!publishableKey) {
-    throw new Error(
-      'Missing Publishable Key. Please set EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY in your .env'
-    );
-  }
+  const publishableKey = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
   useEffect(() => {
-    if (loaded) {
-      SplashScreen.hideAsync();
+    if (error) {
+      console.error('Error loading fonts:', error);
     }
+  }, [error]);
+
+  useEffect(() => {
+    const hideSplash = async () => {
+      try {
+        if (loaded) {
+          await SplashScreen.hideAsync();
+        }
+      } catch (e) {
+        console.error('Error hiding splash screen:', e);
+      }
+    };
+
+    hideSplash();
   }, [loaded]);
+
+  if (!publishableKey) {
+    console.error('Missing Publishable Key');
+    return null;
+  }
 
   if (!loaded) {
     return null;
@@ -43,7 +61,9 @@ export default function RootLayout() {
       <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
         <ClerkLoaded>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-            <Stack>
+            <Stack screenOptions={{
+              animation: Platform.OS === 'android' ? 'none' : 'default',
+            }}>
               <Stack.Screen name="index" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
@@ -56,7 +76,7 @@ export default function RootLayout() {
               <Stack.Screen name="onboarding/auth" options={{ headerShown: false, gestureEnabled: false }} />
               <Stack.Screen name="onboarding/preferences" options={{ headerShown: false, gestureEnabled: false }} />
             </Stack>
-            <StatusBar style="auto" />
+            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
           </ThemeProvider>
         </ClerkLoaded>
       </ClerkProvider>
